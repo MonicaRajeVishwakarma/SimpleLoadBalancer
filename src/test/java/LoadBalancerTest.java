@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LoadBalancerTest {
 
+    //shouldReturnAvailableServer return the available server
     @Test
     void shouldReturnAvailableServer(){
         Server server = new Server(1);
