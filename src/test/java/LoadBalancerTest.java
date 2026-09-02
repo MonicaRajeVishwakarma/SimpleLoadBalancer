@@ -38,4 +38,21 @@ public class LoadBalancerTest {
                 () -> loadBalancer.selectServer()
         );
     }
+
+    @Test
+    void shouldReturnServerInRoundRobinOrder() {
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
+        Server server3 = new Server(3);
+        LoadBalancer loadBalancer = new LoadBalancer();
+
+        loadBalancer.register(server1);
+        loadBalancer.register(server2);
+        loadBalancer.register(server3);
+
+        assertEquals(server1, loadBalancer.selectServer());
+        assertEquals(server2, loadBalancer.selectServer());
+        assertEquals(server3, loadBalancer.selectServer());
+        assertEquals(server1, loadBalancer.selectServer());
+    }
 }
