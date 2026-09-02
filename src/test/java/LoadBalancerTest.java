@@ -31,11 +31,11 @@ public class LoadBalancerTest {
     }
 
     @Test
-    void shouldReturnErrorWhenNoServersAreRegistered(){
+    void shouldReturnErrorWhenNoServersAreRegistered() {
         LoadBalancer loadBalancer = new LoadBalancer();
         assertThrows(
-              IllegalStateException.class,
-                () ->  loadBalancer.selectServer()
+                IllegalStateException.class,
+                () -> loadBalancer.selectServer()
         );
     }
 }
