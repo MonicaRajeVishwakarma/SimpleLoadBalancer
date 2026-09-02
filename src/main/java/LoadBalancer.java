@@ -4,6 +4,7 @@ import java.util.List;
 public class LoadBalancer {
     // making servers as final variable so that it cannot be made to point to a different object.
     private final List<Server> servers = new ArrayList<>();
+    private int index = 0;
 
     public void register(Server server) {
         if (servers.size() >= 10) {
@@ -16,6 +17,10 @@ public class LoadBalancer {
         if (servers.isEmpty()) {
             throw new IllegalStateException("No servers are available");
         }
-        return servers.get(0);
+
+        Server server = servers.get(index);
+        index = (index + 1) % servers.size();
+
+        return server;
     }
 }
