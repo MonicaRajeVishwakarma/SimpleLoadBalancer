@@ -11,6 +11,9 @@ public class LoadBalancer {
         servers.add(server);
     }
     public Server selectServer(){
+        if (servers.isEmpty()){
+            throw new IllegalStateException("no servers are available");
+        }
         return servers.get(0);
     }
 }
