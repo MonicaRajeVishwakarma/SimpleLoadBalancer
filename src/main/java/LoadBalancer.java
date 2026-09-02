@@ -4,10 +4,13 @@ import java.util.List;
 public class LoadBalancer {
     // making servers as final variable so that it cannot be made to point to a different object.
     private final List<Server> servers = new ArrayList<>();
-    void register(Server server){
+    public void register(Server server){
+        if (servers.size() >= 10){
+            throw new IllegalStateException("Maximum of 10 Servers are allowed");
+        }
         servers.add(server);
     }
-    Server selectServer(){
+    public Server selectServer(){
         return servers.get(0);
     }
 }
