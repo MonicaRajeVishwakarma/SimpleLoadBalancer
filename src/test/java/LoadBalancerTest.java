@@ -3,8 +3,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class LoadBalancerTest {
 
@@ -66,5 +65,8 @@ public class LoadBalancerTest {
         assertEquals(server2, loadBalancer.selectServer());
         assertEquals(server3, loadBalancer.selectServer());
         assertEquals(server1, loadBalancer.selectServer());
+
+        verify(loadBalancingStrategy, times(4))
+                .selectServer(anyList());
     }
 }
