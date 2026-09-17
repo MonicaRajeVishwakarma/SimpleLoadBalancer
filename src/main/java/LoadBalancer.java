@@ -23,4 +23,8 @@ public class LoadBalancer {
         }
        return loadBalancingStrategy.selectServer(servers);
     }
+
+    public int getServerCount(){
+        return servers.size();
+    }
 }

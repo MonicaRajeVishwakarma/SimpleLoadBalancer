@@ -1,7 +1,10 @@
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -68,5 +71,42 @@ public class LoadBalancerTest {
 
         verify(loadBalancingStrategy, times(4))
                 .selectServer(anyList());
+    }
+
+    @Test
+    void shouldNeverRegisterMoreThan10ServersConcurrently(){
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+        List<Future<?>> futures = new ArrayList<>();
+
+
+        for (int i=0 ; i <20 ; i++){
+            int id = i;
+            Future<?> future = executor.submit( () -> {
+                loadBalancer.register(new Server(id));
+            });
+
+            futures.add(future);
+        }
+
+        executor.shutdown();
+
+        for (Future<?> future : futures){
+            try{
+                System.out.println("try");
+                future.get();
+            }catch (InterruptedException e){
+                System.out.println("InterruptedException");
+                Thread.currentThread().interrupt();
+            }catch (ExecutionException e){
+                System.out.println("ExecutionException");
+                e.printStackTrace();
+                assertTrue(e.getCause() instanceof IllegalStateException);
+            }
+        }
+
+        assertEquals(10, loadBalancer.getServerCount());
     }
 }
