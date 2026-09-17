@@ -24,7 +24,7 @@ public class LoadBalancer {
        return loadBalancingStrategy.selectServer(servers);
     }
 
-    public int getServerCount(){
+    public synchronized int getServerCount(){
         return servers.size();
     }
 }
