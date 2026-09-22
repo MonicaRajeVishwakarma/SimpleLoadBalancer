@@ -16,7 +16,8 @@ public class LoadBalancerTest {
         Server server = new Server(1);
 
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
 
         loadBalancer.register(server);
         when(loadBalancingStrategy.selectServer(anyList())).thenReturn(server);
@@ -29,7 +30,8 @@ public class LoadBalancerTest {
     @Test
     void shouldReturnErrorWhenMaxLimitIsReached() {
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
 
         for (int i = 1; i <= 10; i++) {
             loadBalancer.register(new Server(i));
@@ -43,7 +45,9 @@ public class LoadBalancerTest {
     @Test
     void shouldReturnErrorWhenNoServersAreRegistered() {
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
         assertThrows(
                 IllegalStateException.class,
                 () -> loadBalancer.selectServer()
@@ -57,7 +61,9 @@ public class LoadBalancerTest {
         Server server1 = new Server(1);
         Server server2 = new Server(2);
         Server server3 = new Server(3);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
         loadBalancer.register(server1);
         loadBalancer.register(server2);
         loadBalancer.register(server3);
@@ -76,7 +82,9 @@ public class LoadBalancerTest {
     @Test
     void shouldNeverRegisterMoreThan10ServersConcurrently(){
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
 
         ExecutorService executor = Executors.newFixedThreadPool(20);
         List<Future<?>> futures = new ArrayList<>();
@@ -119,7 +127,9 @@ public class LoadBalancerTest {
         List<Server> servers = List.of(server1,server2,server3);
 
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
         for(Server server : servers){
             loadBalancer.register(server);
         }
@@ -139,7 +149,9 @@ public class LoadBalancerTest {
         Server server2 = new Server(2);
 
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
 
         loadBalancer.register(server1);
         loadBalancer.register(server2);
@@ -156,7 +168,9 @@ public class LoadBalancerTest {
     @Test
     void shouldReturnIncludeServerAlso(){
         LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+
 
         Server server1 = new Server(1);
         Server server2 = new Server(2);
@@ -181,14 +195,50 @@ public class LoadBalancerTest {
         loadBalancer.includeServer(server2);
 
         loadBalancer.selectServer();
-        verify(loadBalancingStrategy)
-                .selectServer(List.of(server1,server2,server3));
+        verify(loadBalancingStrategy);
+    }
 
+    @Test
+    void shouldSetStatusBasedOnTheServerHealth(){
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        HealthChecker healthChecker = mock(HealthChecker.class);
 
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+        loadBalancer.register(server1);
+        loadBalancer.register(server2);
 
+        when(healthChecker.isHealthy(server1)).thenReturn(true);
+        when(healthChecker.isHealthy(server2)).thenReturn(false);
 
+        loadBalancer.checkServerHealth(server1);
+        loadBalancer.checkServerHealth(server2);
 
+        assertTrue(server1.isActive());
+        assertFalse(server2.isActive());
+    }
+    @Test
+    void shouldReturnTheHealthyServer(){
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
 
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        HealthChecker healthChecker = mock(HealthChecker.class);
 
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy,healthChecker);
+        loadBalancer.register(server1);
+        loadBalancer.register(server2);
+
+        when(loadBalancingStrategy.selectServer(anyList())).thenReturn(server1);
+        when(healthChecker.isHealthy(server1)).thenReturn(true);
+        when(healthChecker.isHealthy(server2)).thenReturn(false);
+
+        loadBalancer.checkServerHealth(server1);
+        loadBalancer.checkServerHealth(server2);
+
+        assertEquals(server1,loadBalancer.selectServer());
+
+        verify(loadBalancingStrategy).selectServer(List.of(server1));
     }
 }

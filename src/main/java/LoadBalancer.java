@@ -6,8 +6,11 @@ public class LoadBalancer {
     private final List<Server> servers = new ArrayList<>();
     private final LoadBalancingStrategy loadBalancingStrategy;
 
-    public LoadBalancer(LoadBalancingStrategy loadBalancingStrategy) {
+    private final HealthChecker healthChecker;
+
+    public LoadBalancer(LoadBalancingStrategy loadBalancingStrategy, HealthChecker healthChecker) {
         this.loadBalancingStrategy = loadBalancingStrategy;
+        this.healthChecker = healthChecker;
     }
 
     public synchronized void register(Server server) {
@@ -48,6 +51,14 @@ public class LoadBalancer {
                 server.setActive(true);
                 break;
             }
+        }
+    }
+
+    public synchronized void checkServerHealth(Server server){
+        if(healthChecker.isHealthy(server)){
+            includeServer(server);
+        }else{
+            excludeServer(server);
         }
     }
 }
