@@ -109,4 +109,86 @@ public class LoadBalancerTest {
 
         assertEquals(10, loadBalancer.getServerCount());
     }
+
+    @Test
+    void shouldReturnAvailableActiveServer(){
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
+        Server server3 = new Server(3);
+
+        List<Server> servers = List.of(server1,server2,server3);
+
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+        for(Server server : servers){
+            loadBalancer.register(server);
+        }
+
+        loadBalancer.excludeServer(server2);
+
+        when(loadBalancingStrategy.selectServer(anyList())).thenReturn(server1);
+
+        assertEquals(server1,loadBalancer.selectServer());
+
+        verify(loadBalancingStrategy).selectServer(List.of(server1,server3));
+    }
+
+    @Test
+    void shouldReturnErrorWhenAllServersAreExcluded(){
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
+
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+
+        loadBalancer.register(server1);
+        loadBalancer.register(server2);
+
+        loadBalancer.excludeServer(server1);
+        loadBalancer.excludeServer(server2);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> loadBalancer.selectServer()
+        );
+    }
+
+    @Test
+    void shouldReturnIncludeServerAlso(){
+        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
+        LoadBalancer loadBalancer = new LoadBalancer(loadBalancingStrategy);
+
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
+        Server server3 = new Server(3);
+
+        List<Server> servers = List.of(server1,server2,server3);
+
+        for(Server server : servers){
+            loadBalancer.register(server);
+        }
+
+        loadBalancer.selectServer();
+        verify(loadBalancingStrategy)
+                .selectServer(List.of(server1,server2,server3));
+
+        loadBalancer.excludeServer(server2);
+
+        loadBalancer.selectServer();
+        verify(loadBalancingStrategy)
+                .selectServer(List.of(server1,server3));
+
+        loadBalancer.includeServer(server2);
+
+        loadBalancer.selectServer();
+        verify(loadBalancingStrategy)
+                .selectServer(List.of(server1,server2,server3));
+
+
+
+
+
+
+
+    }
 }

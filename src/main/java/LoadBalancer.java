@@ -18,13 +18,36 @@ public class LoadBalancer {
     }
 
     public synchronized Server selectServer() {
-        if (servers.isEmpty()) {
-            throw new IllegalStateException("No servers are available");
+        List<Server> activeServers  = new ArrayList<>();
+        for(Server server : servers){
+            if (server.isActive()){
+                activeServers.add(server);
+            }
         }
-       return loadBalancingStrategy.selectServer(servers);
+        if (activeServers.isEmpty()) {
+            throw new IllegalStateException("No active servers are available");
+        }
+       return loadBalancingStrategy.selectServer(activeServers);
     }
 
     public synchronized int getServerCount(){
         return servers.size();
+    }
+    public synchronized void excludeServer(Server serverToExclude){
+       for (Server server : servers){
+           if (server.equals(serverToExclude)){
+               server.setActive(false);
+               break;
+           }
+       }
+    }
+
+    public synchronized void includeServer(Server serverToInclude){
+        for(Server server : servers){
+            if (server.equals(serverToInclude)){
+                server.setActive(true);
+                break;
+            }
+        }
     }
 }
